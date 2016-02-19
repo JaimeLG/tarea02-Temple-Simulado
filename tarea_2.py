@@ -25,8 +25,14 @@ import blocales
 import random
 import itertools
 import math
-import Image
-import ImageDraw
+try:
+    from PIL import Image
+except ImportError:
+    import Image
+try:
+    from PIL import ImageDraw
+except ImportError:
+    import ImageDraw
 import time
 
 
@@ -82,11 +88,13 @@ class problema_grafica_grafo(blocales.Problema):
         @return: Una tupla con un estado vecino al estado de entrada.
 
         """
+        """
         vecino = list(estado)
         i = random.randint(0, len(vecino) - 1)
         vecino[i] = max(
             10, min(self.dim - 10, vecino[i] + random.choice([-1, 1])))
         return vecino
+        """
         #######################################################################
         #                          20 PUNTOS
         #######################################################################
@@ -107,6 +115,20 @@ class problema_grafica_grafo(blocales.Problema):
         #    tu solución. ¿Como integras esta dispersión para utilizar la temperatura del temple simulado?
         #    ¿Que resultados obtienes con el nuevo método? Comenta tus resultados.
 
+        vecino = list(estado)
+        vertice = random.choice(self.vertices)
+
+        if dispersion:
+            num = ( round( random.uniform(-1,1)*dispersion ), round(random.uniform(-1,1)*dispersion) ) 
+        else:
+            num = ( round( random.uniform(-1,1) ), round(random.uniform(-1,1) ) )             
+        
+        pos = self.estado2dic(estado)
+        val = pos[vertice]
+        vecino[vecino.index(val[0])] = max(10, min(self.dim - 10, vecino[vecino.index(val[0])] + num[0]))
+        vecino[vecino.index(val[1])] = max(10, min(self.dim - 10, vecino[vecino.index(val[1])] + num[1]))
+        return vecino
+
     def costo(self, estado):
         """
         Encuentra el costo de un estado. En principio el costo de un estado es la cantidad de veces que dos
@@ -121,10 +143,10 @@ class problema_grafica_grafo(blocales.Problema):
 
         # Inicializa fáctores lineales para los criterios más importantes
         # (default solo cuanta el criterio 1)
-        K1 = 1.0
-        K2 = 0.0
-        K3 = 0.0
-        K4 = 0.0
+        K1 = 5.0
+        K2 = 20.0
+        K3 = 10.0
+        K4 = 10.0
 
         # Genera un diccionario con el estado y la posición para facilidad
         estado_dic = self.estado2dic(estado)
@@ -237,7 +259,26 @@ class problema_grafica_grafo(blocales.Problema):
         #
         # ------ IMPLEMENTA AQUI TU CÓDIGO ------------------------------------
         #
-        return 0
+        total = 0
+        for (v1, v2) in itertools.combinations(self.aristas, 2):
+            conect = None
+            if(v1[0] in v2):
+                conect = v1[0]
+            elif(v1[1] in v2):
+                conect = v1[1]
+            #busca si hay coneccion, si lo hacen sigue    
+            if conect:
+                for i in v1:
+                    if i != conect:
+                        A = (estado_dic[v1[v1.index(i)]][0]-estado_dic[conect][0],estado_dic[v1[v1.index(i)]][1]-estado_dic[conect][1])
+                for j in v2:
+                    if j != conect:
+                        B = (estado_dic[v2[v2.index(j)]][0]-estado_dic[conect][0],estado_dic[v2[v2.index(j)]][1]-estado_dic[conect][1])
+                angulo = math.acos(abs(A[0]*B[0] + A[1]*B[1])/(math.sqrt(math.pow(A[0],2) + math.pow(A[1],2)) * math.sqrt(math.pow(B[0],2) + math.pow(B[1],2))+0.1))
+                if(angulo < math.pi/6):
+                    costo = angulo / (math.pi/6)
+                    total += costo
+        return total
 
     def criterio_propio(self, estado_dic):
         """
