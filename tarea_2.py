@@ -19,8 +19,9 @@ Para que funcione, este modulo debe de encontrarse en la misma carpeta que bloca
 
 """
 
-__author__ = 'Escribe aquí tu nombre'
+__author__ = 'Jaime A Lopez'
 
+from itertools import combinations
 import blocales
 import random
 import itertools
@@ -259,25 +260,33 @@ class problema_grafica_grafo(blocales.Problema):
         #
         # ------ IMPLEMENTA AQUI TU CÓDIGO ------------------------------------
         #
+
+        def angulo_rectas(x1, y1, x2, y2):#funcion que regresa el angulo entre 2 puntos
+            numerador = abs(x1*y1 + x2*y2)
+            denominador = math.sqrt(x1*x1 + x2*x2)*math.sqrt(y1*y1 + y2*y2)
+            cos = numerador / (denominador + .001)
+            return math.acos(cos)
+
         total = 0
-        for (v1, v2) in itertools.combinations(self.aristas, 2):
-            conect = None
-            if(v1[0] in v2):
-                conect = v1[0]
-            elif(v1[1] in v2):
-                conect = v1[1]
-            #busca si hay coneccion, si lo hacen sigue    
-            if conect:
-                for i in v1:
-                    if i != conect:
-                        A = (estado_dic[v1[v1.index(i)]][0]-estado_dic[conect][0],estado_dic[v1[v1.index(i)]][1]-estado_dic[conect][1])
-                for j in v2:
-                    if j != conect:
-                        B = (estado_dic[v2[v2.index(j)]][0]-estado_dic[conect][0],estado_dic[v2[v2.index(j)]][1]-estado_dic[conect][1])
-                angulo = math.acos(abs(A[0]*B[0] + A[1]*B[1])/(math.sqrt(math.pow(A[0],2) + math.pow(A[1],2)) * math.sqrt(math.pow(B[0],2) + math.pow(B[1],2))+0.1))
-                if(angulo < math.pi/6):
-                    costo = angulo / (math.pi/6)
-                    total += costo
+        for vertice in self.vertices:
+
+            insidencias = filter(lambda par: vertice in par, self.aristas)
+            lista = []
+            cord_vertice = estado_dic[vertice]
+            for i in xrange(len(insidencias)):
+                for r in xrange(len(insidencias[i])):
+                    if insidencias[i][r] != vertice:
+                        lista.append(insidencias[i][r])
+            comb = list(combinations(lista,2))
+            for i in comb:
+                cord0 = estado_dic[i[0]]
+                cord1 = estado_dic[i[1]]
+                a = cord0[0] - cord_vertice[0], cord0[1] - cord_vertice[1]
+                b = cord1[0] - cord_vertice[0], cord1[1] - cord_vertice[1]
+                angulo = angulo_rectas(a[0], a[1], b[0], b[1]) 
+                if angulo < math.pi/4:
+                    total += math.pi/4 - angulo
+
         return total
 
     def criterio_propio(self, estado_dic):
@@ -302,7 +311,16 @@ class problema_grafica_grafo(blocales.Problema):
         #
         # ------ IMPLEMENTA AQUI TU CÓDIGO ------------------------------------
         #
-        return 0
+        total = 0
+
+        for (aristaA, aristaB) in itertools.combinations(self.aristas, 2):
+            (x0A, y0A), (xFA, yFA) = estado_dic[aristaA[0]], estado_dic[aristaA[1]]
+            (x0B, y0B), (xFB, yFB) = estado_dic[aristaB[0]], estado_dic[aristaB[1]]
+            den = (xFA - x0A) * (yFB - y0B) - (xFB - x0B) * (yFA - y0A) + 0.0
+            if den == 0:
+                total+=1
+
+        return total
 
     def estado2dic(self, estado):
         """
